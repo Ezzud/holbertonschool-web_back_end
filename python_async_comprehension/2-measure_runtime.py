@@ -2,7 +2,6 @@
 """coroutine that execute asynchronously"""
 
 import time
-from typing import List, Generator
 import asyncio
 async_comprehension = __import__('1-async_comprehension').async_comprehension
 
