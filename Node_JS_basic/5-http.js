@@ -1,63 +1,39 @@
 const http = require('http');
-const fs = require('fs');
-
-function countStudents(path) {
-    return new Promise((resolve, reject) => {
-        fs.readFile(path, { encoding: 'utf-8' }, (err, data) => {
-            if (err) return reject(Error('Cannot load the database'));
-
-            const lines = data.split('\n').slice(1, -1);
-            const header = data.split('\n').slice(0, 1)[0].split(',');
-            const idxFn = header.findIndex((ele) => ele === 'firstname');
-            const idxFd = header.findIndex((ele) => ele === 'field');
-            const fields = {};
-            const students = {};
-            const all = {};
-
-            lines.forEach((line) => {
-                const list = line.split(',');
-                if (!fields[list[idxFd]]) fields[list[idxFd]] = 0;
-                fields[list[idxFd]] += 1;
-                if (!students[list[idxFd]]) students[list[idxFd]] = '';
-                students[list[idxFd]] += students[list[idxFd]]
-                    ? `, ${list[idxFn]}`
-                    : list[idxFn];
-            });
-
-            all.numberStudents = `Number of students: ${lines.length}\n`;
-            all.listStudents = [];
-            for (const key in fields) {
-                if (Object.hasOwnProperty.call(fields, key)) {
-                    const element = fields[key];
-                    all.listStudents.push(`Number of students in ${key}: ${element}. List: ${students[key]}`);
-                }
-            }
-            return resolve(all);
-        });
-    });
-}
-
-const hostname = '127.0.0.1';
-const port = 1245;
+const url = require('url');
+const countStudents = require('./3-read_file_async');
 
 const app = http.createServer((req, res) => {
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'text/plain');
-    if (req.url === '/') res.end('Hello Holberton School!');
-    if (req.url === '/students') {
-        res.write('This is the list of our students\n');
-        countStudents(process.argv[2])
-            .then((data) => {
-                res.write(data.numberStudents);
-                res.write(data.listStudents.join('\n'));
-                res.end();
-            })
-            .catch((err) => {
-                res.end(err.message);
-            });
+  const reqUrl = url.parse(req.url, true);
+
+  if (reqUrl.pathname === '/') {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Hello Holberton School!');
+  } else if (reqUrl.pathname === '/students') {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.write('This is the list of our students\n');
+
+    const databasePath = process.argv[2];
+
+    if (!databasePath) {
+      res.end('Cannot load the database');
+    } else {
+      countStudents(databasePath)
+        .then((output) => {
+          res.write(output);
+          res.end();
+        })
+        .catch(() => {
+          res.end('Cannot load the database');
+        });
     }
+  } else {
+    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    res.end('Not Found');
+  }
 });
 
-app.listen(port, hostname);
+app.listen(1245, () => {
+  console.log('Server is listening on port 1245');
+});
 
 module.exports = app;
