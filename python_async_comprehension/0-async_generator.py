@@ -7,7 +7,7 @@ import random
 from typing import Generator
 
 
-async def async_generator() -> Generator[float, None, None]: # type: ignore
+async def async_generator() -> Generator[float, None, None]:  # type: ignore
     """Give random number between 0 and 10
     every 1 second, 10 times"""
     for _ in range(10):
