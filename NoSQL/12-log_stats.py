@@ -2,42 +2,33 @@
 """
 Python script that provides some stats about Nginx logs stored in MongoDB.
 """
-from pymongo import MongoClient
-from pymongo.errors import ConnectionFailure, OperationFailure, PyMongoError
+import pymongo
 
+def log_stats():
+    """
+    Provides statistics about Nginx logs stored in MongoDB.
 
-def log_infos() -> None:
-    """ Provides some stats about Nginx logs stored in MongoDB. """
+    The function connects to the MongoDB database, retrieves the total number of logs,
+    counts the number of documents for each HTTP method (GET, POST, PUT, PATCH, DELETE),
+    and counts the number of GET requests to the /status path. It then prints these statistics
+    in a specified format.
+    """
+    client = pymongo.MongoClient("mongodb://localhost:27017/")
+    db = client.logs
+    collection = db.nginx
+
+    total_logs = collection.count_documents({})
 
     methods = ["GET", "POST", "PUT", "PATCH", "DELETE"]
+    method_counts = {method: collection.count_documents({"method": method}) for method in methods}
 
-    try:
-        client = MongoClient('mongodb://127.0.0.1:27017')
-        client.admin.command('ping')  # Check if the server is available
-    except ConnectionFailure:
-        print("Server not available")
-        return
-    except PyMongoError as e:
-        print(f"An error occurred: {e}")
-        return
+    status_check_count = collection.count_documents({"method": "GET", "path": "/status"})
 
-    try:
-        nginx = client.logs.nginx
-
-        print(f"{nginx.count_documents({})} logs")
-
-        print("Methods:")
-        for method in methods:
-            print(f"\tmethod {method}: {nginx.count_documents({'method': method})}")
-
-        print(f"{nginx.count_documents({'method': 'GET', 'path': '/status'})} status check")
-    except OperationFailure as e:
-        print(f"Database operation failed: {e}")
-    except PyMongoError as e:
-        print(f"An error occurred: {e}")
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-
+    print(f"{total_logs} logs")
+    print("Methods:")
+    for method in methods:
+        print(f"\tmethod {method}: {method_counts[method]}")
+    print(f"{status_check_count} status check")
 
 if __name__ == "__main__":
-    log_infos()
+    log_stats()
