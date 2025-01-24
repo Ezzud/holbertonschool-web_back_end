@@ -1,4 +1,4 @@
 const displayMessage = (welcome) => 
-    console.log(welcome);
+    process.stdout.write(welcome + '\n');
 
 module.exports = displayMessage;
